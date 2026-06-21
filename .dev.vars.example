@@ -1,0 +1,9 @@
+COOKIE_SECRET=replace-with-a-long-random-secret
+X_CLIENT_ID=replace-with-your-x-oauth-client-id
+X_CLIENT_SECRET=replace-with-your-x-oauth-client-secret
+PUBLIC_BASE_URL=http://127.0.0.1:8787
+X_REDIRECT_URI=http://127.0.0.1:5173/api/auth/x/callback
+POT_WALLET_ADDRESS=replace-with-prize-pool-solana-wallet
+POT_PRICE_URL=https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd
+# Optional: set this if you want to pin the SOL/USD price manually during testing.
+# POT_SOL_USD_PRICE=150

@@ -1,0 +1,43 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sprite",
+  "main": "./worker/index.ts",
+  "workers_dev": true,
+  "preview_urls": true,
+  "compatibility_date": "2026-06-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "vars": {
+    "ADMIN_X_HANDLES": "monarchofct",
+    "CONTEST_ENDS_AT": "2026-07-01T21:59:59.000Z",
+    "SOLANA_RPC_URL": "https://api.mainnet-beta.solana.com",
+    "POT_PRICE_URL": "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd",
+    "POT_WALLET_ADDRESS": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sprite",
+      "database_id": "041ae943-3bc1-41e2-82c8-d07fad3279a9",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SPRITES",
+      "bucket_name": "sprite-submissions"
+    }
+  ]
+}

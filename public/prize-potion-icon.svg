@@ -1,0 +1,31 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="glass" x1="36" y1="28" x2="130" y2="140" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9AF8FF"/>
+      <stop offset="0.48" stop-color="#55D8FF"/>
+      <stop offset="1" stop-color="#7B47FF"/>
+    </linearGradient>
+    <linearGradient id="liquid" x1="39" y1="77" x2="115" y2="138" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4DEBFF"/>
+      <stop offset="0.54" stop-color="#875CFF"/>
+      <stop offset="1" stop-color="#FF62EF"/>
+    </linearGradient>
+    <linearGradient id="cork" x1="94" y1="5" x2="126" y2="42" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4C07D"/>
+      <stop offset="1" stop-color="#9B5C28"/>
+    </linearGradient>
+    <filter id="glow" x="0" y="0" width="160" height="160" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.18 0 0 0 0 0.78 0 0 0 0 1 0 0 0 0.8 0"/>
+      <feBlend in2="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <rect x="93" y="9" width="34" height="34" rx="6" transform="rotate(21 93 9)" fill="url(#cork)"/>
+    <path d="M79 35c8 3 18 6 27 8l-8 22c-8-2-17-5-25-8l6-22Z" fill="#A9F5FF" fill-opacity=".68"/>
+    <path d="M47 53c6-11 17-15 29-11l45 17c12 5 18 16 14 29l-13 37c-5 14-19 22-34 17l-43-16c-15-5-22-20-17-35l19-38Z" fill="url(#glass)" fill-opacity=".42" stroke="#BDFBFF" stroke-width="7"/>
+    <path d="M39 82c21 5 47 14 79 31l-6 16c-4 10-14 15-25 12l-42-16c-11-4-16-15-12-26l6-17Z" fill="url(#liquid)" fill-opacity=".86"/>
+    <path d="M75 75l9 18 20 3-15 14 4 20-18-10-18 10 4-20-15-14 20-3 9-18Z" fill="white"/>
+    <path d="M55 54c13-7 26-6 42 2" stroke="white" stroke-opacity=".72" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>
