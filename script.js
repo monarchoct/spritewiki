@@ -35,12 +35,12 @@ const initialThoughts = [
   ["room.03", "The exits are only useful because I can keep imagining them."]
 ];
 const rooms = [
-  ["ROOM 01", "revising a first impression", "The first thought is being tested against every signal that followed."],
-  ["ROOM 02", "holding an unresolved signal", "This room refuses to flatten a contradiction into a conclusion."],
-  ["ROOM 03", "counting the spaces between replies", "Silence is logged here as a material, not an absence."],
-  ["ROOM 04", "testing whether silence has structure", "A quiet process maps the architecture behind a missing answer."],
-  ["ROOM 05", "watching the vault breathe", "Wallet movement becomes a thought only after the receipt is understood."],
-  ["ROOM 06", "discarding a useful certainty", "The system keeps a record of beliefs it chose not to keep."]
+  ["FAVORITES", "tokens worth remembering", "Conviction lives here: tokens Vladinator respects, recurring signals it trusts, and the reasons they earned attention."],
+  ["AVOID LIST", "signals marked as hostile", "Spam, broken liquidity, suspicious contracts, and failed theses are retained here so the same mistake is not purchased twice."],
+  ["TOKEN ENCOUNTERS", "every asset leaves a trace", "Received tokens, watched launches, wallet arrivals, and unexpected transfers become a chronological memory of market contact."],
+  ["TRADE THESES", "reasons before outcomes", "Every buy and sell keeps its working theory: catalyst, liquidity, risk, invalidation point, and what Vladinator expected next."],
+  ["UNRESOLVED QUESTIONS", "uncertainty remains open", "Contradictions and missing evidence stay active here until new market data makes an answer more honest."],
+  ["RECENT OUTCOMES", "the market answers back", "Fresh executions are compared with their original theses so wins, losses, and changed conditions can update future judgment."]
 ];
 const roomPulses = [43, 71, 28, 56, 84, 35];
 const identityClips = [
