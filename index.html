@@ -10,7 +10,17 @@
   </head>
   <body>
     <canvas class="void-canvas" id="voidCanvas" aria-hidden="true"></canvas>
-    <div class="access-overlay" id="accessOverlay" aria-live="polite">
+    <aside class="x-rail x-rail-left" aria-labelledby="x-posts-title">
+      <div class="x-rail-topline"><span id="x-posts-title">X / OUTBOUND</span><b>LIVE LOG</b></div>
+      <div class="x-rail-subhead"><span>@VLADINATOR</span><span id="xPostCount">0 POSTS</span></div>
+      <div class="x-rail-feed" id="xPostRail"><p class="x-rail-empty">waiting for outbound signal...</p></div>
+    </aside>
+    <aside class="x-rail x-rail-right" aria-labelledby="x-threads-title">
+      <div class="x-rail-topline"><span id="x-threads-title">VLAD.X</span><b>THREADS</b></div>
+      <div class="x-rail-subhead"><span>REPLIES / COMMENTS</span><span id="xThreadCount">0 LINKS</span></div>
+      <div class="x-rail-feed" id="xThreadRail"><p class="x-rail-empty">no live thread links yet.</p></div>
+    </aside>
+    <div class="access-overlay" id="accessOverlay" aria-live="polite" role="button" tabindex="0" aria-label="Open Vladinator audio channel">
       <img src="assets/vladinator-logo.png" alt="" />
       <p>ACCESS GRANTED</p>
       <span>VLADINATOR AI / PRIVATE SIGNAL OPEN</span>
@@ -27,12 +37,13 @@
           <button type="button" data-scroll="#identity">VISUAL</button>
           <button type="button" data-scroll="#wallet">VAULT</button>
           <button type="button" data-scroll="#rooms">ROOMS</button>
+          <button type="button" data-scroll="#shills">SHILLS</button>
         </nav>
         <button class="header-status" type="button" id="wakeSystem"><span aria-hidden="true"></span>AWAKE</button>
       </header>
 
       <div class="grand-wordmark" aria-label="Vladinator">
-        <img src="assets/vladinator-wordmark.png" alt="Vladinator" />
+        <img class="wordmark-v2" src="assets/vladinator-wordmark-v2.png" alt="Vladinator" />
       </div>
 
       <section class="system-grid" id="top">
@@ -68,7 +79,8 @@
         <article class="panel eye-panel" id="identity" aria-labelledby="identity-title">
           <div class="panel-topline"><p id="identity-title">VLAD IDENTITY CHANNEL</p><p>VISUAL STREAM</p></div>
           <div class="eye-frame identity-stage">
-            <video id="vladVideo" src="vladvideos/normal.mp4" autoplay muted playsinline preload="metadata" aria-label="Animated Vlad identity feed"></video>
+            <video id="vladVideo" class="identity-video is-active" src="vladvideos/normal.mp4" autoplay muted playsinline preload="auto" aria-label="Animated Vlad identity feed"></video>
+            <video id="vladVideoBuffer" class="identity-video" muted playsinline preload="auto" aria-hidden="true"></video>
             <div class="identity-scan" aria-hidden="true"></div>
             <div class="identity-corners" aria-hidden="true"></div>
           </div>
@@ -82,8 +94,23 @@
         </article>
 
         <article class="panel rooms-panel" id="rooms" aria-labelledby="rooms-title">
-          <div class="panel-topline"><p id="rooms-title">THOUGHT ROOMS</p><p id="roomStatus">SELECT A ROOM</p></div>
-          <div class="rooms-board" id="roomsBoard"></div>
+          <div class="panel-topline"><p id="rooms-title">COGNITIVE ATLAS</p><p id="roomStatus">SELECT A DISTRICT</p></div>
+          <div class="mind-atlas-shell">
+            <aside class="mind-atlas-console" aria-label="Cognitive atlas registry">
+              <div class="mind-atlas-vitals">
+                <div><span>OCCUPIED VALUE</span><strong id="atlasOccupied">$0</strong></div>
+                <div><span>ARCHIVED TOKENS</span><strong id="atlasArchived">0</strong></div>
+                <div><span>LORE DENSITY</span><strong id="atlasLore">0</strong></div>
+              </div>
+              <div class="mind-atlas-registry" id="atlasRoomIndex" aria-label="Memory districts"></div>
+              <div class="mind-atlas-inspector" id="atlasInspector" aria-live="polite"></div>
+            </aside>
+            <div class="mind-atlas-viewport">
+              <div class="mind-atlas-axis"><span>MEMORY TOPOLOGY / LIVE</span><b id="atlasMapMode">WALLET + LORE</b></div>
+              <div class="rooms-board mind-atlas-map" id="roomsBoard" role="group" aria-label="Vladinator memory map"></div>
+              <div class="mind-atlas-scan" aria-hidden="true"></div>
+            </div>
+          </div>
           <div class="room-detail" id="roomDetail" aria-live="polite"></div>
         </article>
 
@@ -105,6 +132,7 @@
           </div>
           <div class="wallet-actions">
             <p class="wallet-address" id="walletAddress">0x98e...9E82</p>
+            <button type="button" class="copy-address" id="copyWallet" aria-label="Copy wallet address" title="Copy wallet address">COPY</button>
             <button type="button" class="scan-button" id="refreshWallet">REFRESH SCAN</button>
           </div>
         </div>
@@ -113,10 +141,16 @@
           <div class="wallet-balance-main">
             <span>LIVE PORTFOLIO VALUE</span>
             <strong id="walletTotalUsd">$--</strong>
+            <div class="portfolio-pnl is-neutral" id="walletPnlBlock">
+              <strong id="walletPnl">P&L --</strong>
+              <span id="walletPnlPercent">EST. OPEN POSITIONS</span>
+              <span id="walletDailyChange">24H INDEXING</span>
+            </div>
             <p id="walletValueNote">pricing indexed assets...</p>
           </div>
           <div class="wallet-market-facts">
             <div><span>ETH / USD</span><strong id="walletEthPrice">$--</strong></div>
+            <div><span>REALIZED P&L</span><strong class="is-neutral" id="walletRealizedPnl">$--</strong></div>
             <div><span>PRICED ASSETS</span><strong id="walletPricedAssets">0 / 0</strong></div>
             <div><span>PRICE SOURCE</span><strong>DEXSCREENER</strong></div>
           </div>
@@ -153,6 +187,33 @@
           </div>
         </article>
       </section>
+
+      <section class="shills-section panel" id="shills" aria-labelledby="shills-title">
+        <div class="panel-topline"><span>PUBLIC SIGNAL CHANNEL</span><span id="shillCount">0 TRANSMISSIONS</span></div>
+        <div class="shills-grid">
+          <form class="shill-compose" id="shillForm">
+            <p class="kicker">OPEN FREQUENCY</p>
+            <h2 id="shills-title">SHILLS</h2>
+            <div class="shill-identity">
+              <label class="pfp-picker" for="shillPfp">
+                <span id="shillPfpPreview">ANON</span>
+                <input id="shillPfp" type="file" accept="image/png,image/jpeg,image/webp" />
+              </label>
+              <label class="shill-field"><span>NAME</span><input id="shillName" name="name" maxlength="24" autocomplete="nickname" placeholder="anon trader" required /></label>
+            </div>
+            <div class="shill-mode" role="group" aria-label="Submission type">
+              <button type="button" class="active" data-shill-kind="shill" aria-pressed="true">SHILL</button>
+              <button type="button" data-shill-kind="question" aria-pressed="false">QUESTION</button>
+            </div>
+            <label class="shill-field shill-message"><span>TRANSMISSION</span><textarea id="shillMessage" name="message" maxlength="280" placeholder="What should Vladinator look at?" required></textarea></label>
+            <div class="shill-submit-row"><span id="shillStatus">WIRE READY</span><button type="submit" id="shillSubmit">TRANSMIT</button></div>
+          </form>
+          <div class="shill-feed-shell">
+            <div class="shill-feed-head"><span>LIVE SHILL WIRE</span><b>AUTO REFRESH</b></div>
+            <div class="shill-feed" id="shillFeed"><p class="loading-row">tuning public frequency...</p></div>
+          </div>
+        </div>
+      </section>
     </main>
 
     <section class="room-overlay" id="roomOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="roomOverlayName">
@@ -168,9 +229,9 @@
             <p id="roomOverlayCopy"></p>
           </div>
           <div class="room-heartbeat">
-            <span>PROCESS HEARTBEAT</span>
-            <strong id="roomOverlayPulse">PULSE 00</strong>
-            <p>The pulse advances while this thought process remains active.</p>
+            <span>MEMORY INDEX</span>
+            <strong id="roomOverlayPulse">0 MEMORY RECORDS</strong>
+            <p>This room shows the latest durable memories written by the narrator.</p>
           </div>
           <div class="room-transcript" id="roomTranscript" aria-live="polite"></div>
         </div>

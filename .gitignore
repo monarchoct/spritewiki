@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.speech-cache/
+.runtime/
+node_modules/
+.wrangler/
+tmp/
+output/
+CON
+*.log

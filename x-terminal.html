@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Vladinator X Terminal</title>
+  <link rel="stylesheet" href="/x-terminal.css">
+  <link rel="stylesheet" href="/x-terminal-inspection.css">
+</head>
+<body>
+  <main class="terminal-shell">
+    <header class="masthead">
+      <a class="brand" href="/">VLADINATOR <span>X TERMINAL</span></a>
+      <div class="masthead-status"><span id="apiState" class="signal"></span><span id="apiLabel">CONNECTING</span><span>DRY RUN</span></div>
+    </header>
+
+    <section class="title-row">
+      <div>
+        <p class="eyebrow">AUTONOMOUS POST ENGINE</p>
+        <h1>live draft<br><em>receipts.</em></h1>
+      </div>
+      <p>Real backend context. Generated drafts only. Nothing on this screen can publish to X.</p>
+    </section>
+
+    <section class="system-strip" aria-label="Workflow status">
+      <div><span>01</span><strong>ROUTE</strong><b id="routeLabel">STANDBY</b></div>
+      <div><span>02</span><strong>CONTEXT</strong><b id="contextLabel">WAITING</b></div>
+      <div><span>03</span><strong>STYLE SET</strong><b id="styleLabel">0 REFERENCES</b></div>
+      <div><span>04</span><strong>OUTPUT</strong><b id="outputLabel">NO DRAFT</b></div>
+    </section>
+
+    <section class="workbench">
+      <form id="agentForm" class="command-panel">
+        <div class="panel-title"><span>NEW DRY RUN</span><small>LOCAL ONLY</small></div>
+        <label>
+          <span>MODE</span>
+          <select id="task">
+            <optgroup label="LIVE RECEIPTS">
+              <option value="latest_trade">Latest confirmed trade</option>
+              <option value="holding">Current holding read</option>
+              <option value="market">Market comment</option>
+              <option value="vlad">$VLAD signal</option>
+              <option value="reply">Direct reply</option>
+              <option value="random_reply">Random timeline reply</option>
+              <option value="quote">Quote tweet</option>
+              <option value="sample_buy">Sample buy receipt</option>
+              <option value="sample_sell">Sample sell receipt</option>
+            </optgroup>
+            <optgroup label="OWN THOUGHTS">
+              <option value="own_robinhood_chain">Robinhood Chain thought</option>
+              <option value="own_pumpfun">Pump.fun roast</option>
+              <option value="own_vladtenev">Vlad Tenev bit</option>
+              <option value="own_ansem">Ansem thought</option>
+              <option value="own_blackbull">Black Bull thought</option>
+              <option value="own_vlad">$VLAD one-liner</option>
+            </optgroup>
+          </select>
+        </label>
+        <label>
+          <span>OPTIONAL ANGLE</span>
+          <textarea id="angle" maxlength="280" placeholder="e.g. restart a chain tribalism argument"></textarea>
+        </label>
+        <label id="sourceWrap" hidden>
+          <span>SOURCE POST</span>
+          <textarea id="source" maxlength="280" placeholder="paste a post to reply to or quote"></textarea>
+        </label>
+        <div class="actions">
+          <button id="surprise" class="button secondary" type="button">RANDOM MODE</button>
+          <button id="randomReply" class="button secondary" type="button">RANDOM REPLY</button>
+          <button id="generate" class="button primary" type="submit">GENERATE</button>
+        </div>
+        <p id="message" class="message">Select a live route.</p>
+      </form>
+
+      <aside class="context-panel">
+        <div class="panel-title"><span>STRUCTURED EVENT</span><small id="routeBadge">STANDBY</small></div>
+        <div id="metricGrid" class="metric-grid">
+          <div><span>WALLET VALUE</span><strong>--</strong></div>
+          <div><span>TRADE VALUE</span><strong>--</strong></div>
+          <div><span>DAILY PNL</span><strong>--</strong></div>
+          <div><span>POSITION PNL</span><strong>--</strong></div>
+        </div>
+        <pre id="eventJson">Awaiting a dry run.</pre>
+      </aside>
+    </section>
+
+    <section class="inspection-section" aria-labelledby="inspectionTitle">
+      <div class="inspection-head">
+        <div>
+          <p class="eyebrow">PRIVATE COGNITION</p>
+          <h2 id="inspectionTitle">mind / research</h2>
+        </div>
+        <div class="inspection-actions">
+          <div class="view-tabs" role="tablist" aria-label="Inspection view">
+            <button class="view-tab active" type="button" role="tab" aria-selected="true" data-view="mind">MIND</button>
+            <button class="view-tab" type="button" role="tab" aria-selected="false" data-view="research">RESEARCH</button>
+          </div>
+          <button id="refreshInspection" class="button secondary" type="button">REFRESH</button>
+        </div>
+      </div>
+
+      <div id="mindView" class="inspection-view active" role="tabpanel">
+        <div id="mindMetrics" class="mind-metrics">
+          <div><span>ACTIVE THOUGHTS</span><strong>--</strong></div>
+          <div><span>OBSERVATIONS</span><strong>--</strong></div>
+          <div><span>OPEN QUESTIONS</span><strong>--</strong></div>
+          <div><span>RECENT EXPRESSIONS</span><strong>--</strong></div>
+        </div>
+        <div class="inspection-grid">
+          <section class="inspect-panel">
+            <div class="panel-title"><span>THOUGHT PRESSURE</span><small>MATURE IDEAS RISE</small></div>
+            <div id="thoughtList" class="inspect-list"><p class="inspect-empty">Loading mind state.</p></div>
+          </section>
+          <section class="inspect-panel">
+            <div class="panel-title"><span>RECENT EXPRESSION MEMORY</span><small>REPETITION GUARD</small></div>
+            <div id="expressionList" class="inspect-list"><p class="inspect-empty">Loading expression history.</p></div>
+          </section>
+        </div>
+      </div>
+
+      <div id="researchView" class="inspection-view" role="tabpanel" hidden>
+        <div id="researchFlags" class="research-flags"></div>
+        <div class="inspection-grid research-grid">
+          <section class="inspect-panel">
+            <div class="panel-title"><span>WATCHERS</span><small>CONFIGURED SOURCES</small></div>
+            <div id="watcherList" class="inspect-list"><p class="inspect-empty">Loading watchers.</p></div>
+          </section>
+          <section class="inspect-panel">
+            <div class="panel-title"><span>ENGAGEMENT CANDIDATES</span><small>MANUAL REVIEW</small></div>
+            <div id="candidateList" class="inspect-list"><p class="inspect-empty">Loading candidates.</p></div>
+          </section>
+        </div>
+        <section class="inspect-panel discovery-panel">
+          <div class="panel-title"><span>DISCOVERED POSTS</span><small>PROVENANCE LOG</small></div>
+          <div id="discoveryList" class="inspect-list discoveries"><p class="inspect-empty">Loading research log.</p></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="draft-section">
+      <div class="draft-head">
+        <div><p class="eyebrow">MODEL OUTPUT</p><h2>tweet pair</h2></div>
+        <button id="runSet" class="button secondary" type="button">RUN EXAMPLE PACK</button>
+      </div>
+      <div id="drafts" class="drafts" aria-live="polite">
+        <div class="empty-state">No receipts drafted yet.</div>
+      </div>
+    </section>
+
+    <template id="tweetTemplate">
+      <article class="tweet-card">
+        <div class="tweet-top"><span class="tweet-route"></span><span class="tweet-kind"></span></div>
+        <textarea class="tweet-text" maxlength="280" spellcheck="true"></textarea>
+        <div class="tweet-bottom"><span class="tweet-count"></span><span>DRY RUN / NOT POSTED</span></div>
+      </article>
+    </template>
+  </main>
+  <script src="/x-terminal.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "vladinator-ai",
+  "main": "cloudflare-worker.js",
+  "compatibility_date": "2026-07-11",
+  "workers_dev": true,
+  "vars": {
+    "OPENAI_MODEL": "gpt-5.6-luna",
+    "ELEVENLABS_VOICE_ID": "s8jjrm6NWZGTCcEu93RX",
+    "ELEVENLABS_MODEL_ID": "eleven_flash_v2_5",
+    "X_AUTOMATION_ENABLED": "false",
+    "X_RESEARCH_ENABLED": "false",
+    "X_RESEARCH_DRY_RUN": "true",
+    "X_AUTO_REPLY_ENABLED": "false",
+    "X_AUTO_QUOTE_ENABLED": "false",
+    "X_ACCOUNT_POLL_INTERVAL_MS": "300000",
+    "X_TOPIC_SEARCH_INTERVAL_MS": "900000",
+    "X_MAX_RESULTS_PER_QUERY": "10",
+    "BACKEND_PAUSED": "true"
+  },
+  "containers": [
+    {
+      "class_name": "VladinatorContainer",
+      "image": "./Dockerfile",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "VLADINATOR_CONTAINER",
+        "class_name": "VladinatorContainer"
+      }
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "SHILLS_DB",
+      "database_name": "vladinator-shills",
+      "database_id": "23e50a1d-c65a-4c27-9165-5ff0661cb18d"
+    }
+  ],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["VladinatorContainer"]
+    }
+  ],
+  "routes": [
+    { "pattern": "vladinator.ceo/*", "zone_name": "vladinator.ceo" },
+    { "pattern": "www.vladinator.ceo/*", "zone_name": "vladinator.ceo" }
+  ]
+}

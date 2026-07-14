@@ -1,0 +1,7 @@
+.git
+.env
+.runtime
+.speech-cache
+node_modules
+server.stdout.log
+server.stderr.log
