@@ -35,6 +35,9 @@ export class VladinatorContainer extends Container {
 
   async fetch(request) {
     if (new URL(request.url).pathname === "/__vladinator/restart") {
+      const expected = env.CONTAINER_CONTROL_TOKEN;
+      const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+      if (!expected || supplied !== expected) return new Response("Not found", { status: 404 });
       await this.destroy();
       return new Response("Container restart requested", { status: 202 });
     }
@@ -275,7 +278,10 @@ export default {
       const expected = env.CONTAINER_CONTROL_TOKEN;
       const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
       if (!expected || supplied !== expected) return new Response("Not found", { status: 404 });
-      await container.fetch(new Request(new URL("/__vladinator/restart", request.url), { method: "POST" }));
+      await container.fetch(new Request(new URL("/__vladinator/restart", request.url), {
+        method: "POST",
+        headers: { authorization: `Bearer ${expected}` }
+      }));
       return Response.json({ restarting: true }, { headers: { "cache-control": "no-store" } });
     }
     if (url.pathname === "/api/shills" && (request.method === "GET" || request.method === "POST")) return durableShillFeed(request, env, container);
