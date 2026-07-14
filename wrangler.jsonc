@@ -8,15 +8,15 @@
     "OPENAI_MODEL": "gpt-5.6-luna",
     "ELEVENLABS_VOICE_ID": "s8jjrm6NWZGTCcEu93RX",
     "ELEVENLABS_MODEL_ID": "eleven_flash_v2_5",
-    "X_AUTOMATION_ENABLED": "false",
-    "X_RESEARCH_ENABLED": "false",
-    "X_RESEARCH_DRY_RUN": "true",
-    "X_AUTO_REPLY_ENABLED": "false",
-    "X_AUTO_QUOTE_ENABLED": "false",
+    "X_AUTOMATION_ENABLED": "true",
+    "X_RESEARCH_ENABLED": "true",
+    "X_RESEARCH_DRY_RUN": "false",
+    "X_AUTO_REPLY_ENABLED": "true",
+    "X_AUTO_QUOTE_ENABLED": "true",
     "X_ACCOUNT_POLL_INTERVAL_MS": "300000",
     "X_TOPIC_SEARCH_INTERVAL_MS": "900000",
     "X_MAX_RESULTS_PER_QUERY": "10",
-    "BACKEND_PAUSED": "true"
+    "BACKEND_PAUSED": "false"
   },
   "containers": [
     {
