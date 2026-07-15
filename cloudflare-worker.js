@@ -1,6 +1,9 @@
 import { Container } from "@cloudflare/containers";
 import { env } from "cloudflare:workers";
 
+const DEFAULT_WALLET = "0x5fdb24bcd0b3b7a0a7c1ce17cc6b10a1441147b7";
+const activeWallet = (bindings) => String(bindings.VLADINATOR_WALLET_ADDRESS || DEFAULT_WALLET).trim().toLowerCase();
+
 export class VladinatorContainer extends Container {
   defaultPort = 4173;
   sleepAfter = "15m";
@@ -11,6 +14,7 @@ export class VladinatorContainer extends Container {
     ELEVENLABS_VOICE_ID: env.ELEVENLABS_VOICE_ID,
     ELEVENLABS_MODEL_ID: env.ELEVENLABS_MODEL_ID,
     ROBINHOODCHAIN_RPC_URL: env.ROBINHOODCHAIN_RPC_URL,
+    VLADINATOR_WALLET_ADDRESS: env.VLADINATOR_WALLET_ADDRESS || DEFAULT_WALLET,
     X_API_KEY: env.X_API_KEY,
     X_API_SECRET: env.X_API_SECRET,
     X_BEARER_TOKEN: env.X_BEARER_TOKEN,
@@ -80,11 +84,48 @@ async function ensureXMindDb(db) {
   )`).run();
 }
 
+async function ensureMetaDb(db) {
+  await db.prepare(`CREATE TABLE IF NOT EXISTS vladinator_meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`).run();
+}
+
+async function resetDurableStorage(db, wallet) {
+  await ensureShillsDb(db);
+  await ensureXPostsDb(db);
+  await ensureXMindDb(db);
+  await ensureMetaDb(db);
+  const resetAt = new Date().toISOString();
+  await db.batch([
+    db.prepare("DELETE FROM shills"),
+    db.prepare("DELETE FROM x_posts"),
+    db.prepare("DELETE FROM x_mind_state"),
+    db.prepare(`INSERT INTO vladinator_meta (key, value, updated_at) VALUES ('active_wallet', ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).bind(wallet, resetAt),
+    db.prepare(`INSERT INTO vladinator_meta (key, value, updated_at) VALUES ('state_reset_at', ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`).bind(resetAt, resetAt)
+  ]);
+  return { wallet, resetAt };
+}
+
+async function ensureDurableStorage(db, wallet) {
+  await ensureShillsDb(db);
+  await ensureXPostsDb(db);
+  await ensureXMindDb(db);
+  await ensureMetaDb(db);
+  const walletRow = await db.prepare("SELECT value FROM vladinator_meta WHERE key = 'active_wallet'").first();
+  if (!walletRow || String(walletRow.value).toLowerCase() !== wallet) return resetDurableStorage(db, wallet);
+  const resetRow = await db.prepare("SELECT value FROM vladinator_meta WHERE key = 'state_reset_at'").first();
+  return { wallet, resetAt: resetRow?.value || new Date(0).toISOString() };
+}
+
 async function durableXMindState(request, env) {
   const expected = env.CONTAINER_CONTROL_TOKEN;
   const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!expected || supplied !== expected) return new Response("Not found", { status: 404 });
-  await ensureXMindDb(env.SHILLS_DB);
+  await ensureDurableStorage(env.SHILLS_DB, activeWallet(env));
   if (request.method === "PUT") {
     const body = await request.json().catch(() => null);
     if (!body?.state || typeof body.state !== "object") return Response.json({ ok: false, error: "state object required" }, { status: 400 });
@@ -151,7 +192,7 @@ async function storeShill(db, item) {
 }
 
 async function durableShillFeed(request, env, container) {
-  await ensureShillsDb(env.SHILLS_DB);
+  await ensureDurableStorage(env.SHILLS_DB, activeWallet(env));
   if (request.method === "POST") {
     const response = await container.fetch(request);
     if (response.ok) {
@@ -221,7 +262,7 @@ async function xTimelineBackfill(request, env) {
 }
 
 async function durableXFeed(request, env, container) {
-  await ensureXPostsDb(env.SHILLS_DB);
+  const storage = await ensureDurableStorage(env.SHILLS_DB, activeWallet(env));
   let liveItems = [];
   try {
     const live = await container.fetch(request);
@@ -231,7 +272,9 @@ async function durableXFeed(request, env, container) {
       await storeXPosts(env.SHILLS_DB, liveItems);
     }
   } catch {}
-  const timelineItems = await xTimelineBackfill(request, env);
+  const resetAt = new Date(storage.resetAt || 0).getTime();
+  const timelineItems = (await xTimelineBackfill(request, env))
+    .filter((item) => new Date(item.postedAt || 0).getTime() >= resetAt);
   if (timelineItems.length) await storeXPosts(env.SHILLS_DB, timelineItems);
   const result = await env.SHILLS_DB.prepare("SELECT id, text, type, posted_at, reply_to, quote_tweet_id, context_author, media_url, media_type FROM x_posts ORDER BY posted_at DESC LIMIT 100").all();
   const storedItems = (result.results || []).map(xPostFromRow);
@@ -274,6 +317,23 @@ export default {
     const container = env.VLADINATOR_CONTAINER.getByName("production");
     const url = new URL(request.url);
     if (url.pathname === "/api/_internal/x-mind" && (request.method === "GET" || request.method === "PUT")) return durableXMindState(request, env);
+    if (url.pathname === "/api/_internal/reset" && request.method === "POST") {
+      const expected = env.CONTAINER_CONTROL_TOKEN;
+      const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+      if (!expected || supplied !== expected) return new Response("Not found", { status: 404 });
+      let containerReset = null;
+      try {
+        const response = await container.fetch(new Request(new URL("/api/_internal/reset", request.url), {
+          method: "POST",
+          headers: { authorization: `Bearer ${expected}` }
+        }));
+        containerReset = await response.json().catch(() => ({ ok: response.ok, status: response.status }));
+      } catch (error) {
+        containerReset = { ok: false, error: error.message };
+      }
+      const durable = await resetDurableStorage(env.SHILLS_DB, activeWallet(env));
+      return Response.json({ ok: true, durable, container: containerReset }, { headers: { "cache-control": "no-store" } });
+    }
     if (url.pathname === "/api/_internal/restart" && request.method === "POST") {
       const expected = env.CONTAINER_CONTROL_TOKEN;
       const supplied = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");

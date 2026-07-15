@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node server.js",
+    "vlad": "node vladctl.js",
     "test": "node --test"
   },
   "devDependencies": {

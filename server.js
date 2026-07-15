@@ -15,20 +15,26 @@ if (fs.existsSync(envPath)) {
 const PORT = Number(process.env.PORT || 4173);
 const ROOT = __dirname;
 const BACKEND_PAUSED = process.env.BACKEND_PAUSED === "true";
+const DEFAULT_WALLET = "0x5fdb24bcd0b3b7a0a7c1ce17cc6b10a1441147b7";
+const configuredWallet = String(process.env.VLADINATOR_WALLET_ADDRESS || DEFAULT_WALLET).trim().toLowerCase();
+if (!/^0x[a-f0-9]{40}$/.test(configuredWallet)) throw new Error("VLADINATOR_WALLET_ADDRESS must be a valid EVM address");
+const WALLET = configuredWallet;
+const WALLET_STATE_DIR = path.join(ROOT, ".runtime", "wallets", WALLET.slice(2));
 const NARRATOR_PROMPT_PATH = path.join(ROOT, "vladinator-prompt.md");
 const TALK_NORMAL_PROMPT_PATH = path.join(ROOT, "vendor", "talk-normal", "prompt.md");
 const X_WORKFLOW_PATH = path.join(ROOT, "vladinator-x-workflow.md");
 const X_WRITING_EXAMPLES_PATH = path.join(ROOT, "vladinator-writing-examples.txt");
 const X_CHARACTER_PATH = path.join(ROOT, "vladinator-x-character.json");
 const X_EXPRESSION_CONFIG_PATH = path.join(ROOT, "x-expression-config.json");
-const NARRATOR_STATE_PATH = path.join(ROOT, ".runtime", "narrator-state.json");
-const X_STATE_PATH = path.join(ROOT, ".runtime", "x-state.json");
-const X_MIND_STATE_PATH = path.join(ROOT, ".runtime", "x-mind-state.json");
-const SHILLS_STATE_PATH = path.join(ROOT, ".runtime", "shills.json");
+const NARRATOR_STATE_PATH = path.join(WALLET_STATE_DIR, "narrator-state.json");
+const X_STATE_PATH = path.join(WALLET_STATE_DIR, "x-state.json");
+const X_MIND_STATE_PATH = path.join(WALLET_STATE_DIR, "x-mind-state.json");
+const SHILLS_STATE_PATH = path.join(WALLET_STATE_DIR, "shills.json");
+const LEGACY_RUNTIME_STATE_PATHS = ["narrator-state.json", "x-state.json", "x-mind-state.json", "shills.json"]
+  .map((name) => path.join(ROOT, ".runtime", name));
 const VLAD_MEMES_DIR = path.join(ROOT, "vladmemes");
 const WELCOME_TEXT = "Hello. I am Vladinator, a fictional Robinhood Chain intelligence. I am here for the memecoin receipts and whatever they reveal.";
 const welcomeLine = { id: "vladinator-welcome", timestamp: null, speaker: "vlad.core", message: WELCOME_TEXT, speak: true, kind: "greeting", audioUrl: null };
-const WALLET = "0x98e915932c3ca47ae57050aabc39aece92aa9e82";
 const RPC = process.env.ROBINHOODCHAIN_RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
 const V2 = "https://robinhoodchain.blockscout.com/api/v2";
 const V1 = "https://robinhoodchain.blockscout.com/api";
@@ -326,6 +332,62 @@ function saveShills() {
   } catch (error) { console.error("shill_save_error", error.message); }
 }
 loadShills();
+function resetVladinatorRuntimeState() {
+  const removed = {
+    shills: shills.length,
+    narratorLines: narratorFeed.length,
+    queuedNarrations: narratorQueue.length,
+    xPosts: xPostLog.length,
+    xQueue: xTweetQueue.length,
+    memories: ROOM_NAMES.reduce((total, name) => total + memoryRooms[name].length, 0)
+  };
+  narratorFeed.splice(0);
+  narratorQueue.splice(0);
+  xTweetQueue.splice(0);
+  xPostLog.splice(0);
+  shills.splice(0);
+  xRecentDraftTopics.splice(0);
+  for (const name of ROOM_NAMES) memoryRooms[name].splice(0);
+  for (const collection of [narratedHashes, xPostedHashes, xSeenMentionIds, xRespondedTweetIds, xUsedMemeFiles, optimisticEventHashes, scoutSeenContracts]) collection.clear();
+  for (const collection of [shillRateLimits, pendingWalletTransactions, markets, observedAssets]) collection.clear();
+  latestTransfers = [];
+  nativeQuoteCache = null;
+  lastWatchedBlock = null;
+  activityBaselineReady = false;
+  hasPersistedNarrationState = false;
+  narratorProcessing = false;
+  xPosting = false;
+  lastNarrationAt = 0;
+  lastIdleThought = 0;
+  lastSelfReflection = 0;
+  nextQuietThoughtAt = Date.now() + nextQuietDelay();
+  nextScoutThoughtAt = Date.now() + nextScoutDelay();
+  nextRoutineTweetAt = Date.now() + 60 * 1000;
+  welcomeLine.timestamp = null;
+  welcomeLine.audioUrl = null;
+  summary = { wallet: WALLET, state: "warming", totalUsd: 0, pricedAssets: 0, tokens: [] };
+  activity = { wallet: WALLET, state: "warming", events: [] };
+  if (narratorCooldownTimer) clearTimeout(narratorCooldownTimer);
+  narratorCooldownTimer = undefined;
+  if (xMindSyncTimer) clearTimeout(xMindSyncTimer);
+  xMindSyncTimer = undefined;
+  const onMindChange = xMind.onChange;
+  xMind.onChange = null;
+  xMind.reset();
+  xMind.onChange = onMindChange;
+  for (const legacyPath of LEGACY_RUNTIME_STATE_PATHS) {
+    try { fs.unlinkSync(legacyPath); } catch (error) { if (error.code !== "ENOENT") console.error("legacy_state_reset_error", error.message); }
+  }
+  saveXState();
+  saveShills();
+  try {
+    fs.mkdirSync(path.dirname(NARRATOR_STATE_PATH), { recursive: true });
+    fs.writeFileSync(NARRATOR_STATE_PATH, JSON.stringify({ hashes: [], wallet: WALLET, updatedAt: new Date().toISOString() }));
+  } catch (error) {
+    console.error("narrator_state_reset_error", error.message);
+  }
+  return { wallet: WALLET, removed };
+}
 function display(value, decimals = 18, places = 5) {
   const amount = bigint(value); const digits = Math.max(0, Math.min(Number(decimals) || 18, 36)); const base = 10n ** BigInt(digits);
   const fraction = (amount % base).toString().padStart(digits, "0").slice(0, places).replace(/0+$/, "");
@@ -3154,6 +3216,62 @@ function sendSpeech(res, name) {
   fs.createReadStream(file).pipe(res);
 }
 function isLoopbackRequest(req) { return ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(String(req.socket.remoteAddress || "")); }
+function controlRequestAuthorized(req) {
+  if (isLoopbackRequest(req)) return true;
+  const expected = String(process.env.CONTAINER_CONTROL_TOKEN || "");
+  const supplied = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  if (!expected || expected.length !== supplied.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(supplied));
+}
+async function handleControlReset(req, res) {
+  if (!controlRequestAuthorized(req)) return sendJson(res, { error: "not found" }, 404);
+  return sendJson(res, { ok: true, ...resetVladinatorRuntimeState() });
+}
+async function handleControlInject(req, res) {
+  if (!controlRequestAuthorized(req)) return sendJson(res, { error: "not found" }, 404);
+  try {
+    const body = await readJsonBody(req, 24000);
+    const target = body.target === "x" ? "x" : "web";
+    const message = cleanText(body.message, target === "x" ? 280 : 500);
+    if (!message) return sendJson(res, { error: "message is required" }, 400);
+    if (target === "web") {
+      if (BACKEND_PAUSED) return sendJson(res, { error: "Vlad AI backend is paused. Run `npm run vlad -- on backend` first." }, 409);
+      const name = cleanText(body.name || "operator", 24) || "operator";
+      const entry = {
+        id: `operator-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        name,
+        pfp: "",
+        message,
+        kind: body.kind === "shill" ? "shill" : "question",
+        createdAt: new Date().toISOString(),
+        response: null,
+        respondedAt: null
+      };
+      shills.unshift(entry);
+      while (shills.length > 250) shills.pop();
+      saveShills();
+      queueCommunityResponse(entry);
+      return sendJson(res, { ok: true, target, queued: true, item: entry }, 202);
+    }
+    const mode = body.mode === "post" ? "post" : "reply";
+    const input = mode === "reply"
+      ? {
+          type: "reply_mention",
+          tweet: { id: `operator-${Date.now()}`, text: message, created_at: new Date().toISOString() },
+          author: { username: cleanText(body.name || "operator", 40) || "operator" },
+          seed: message
+        }
+      : { type: "manual", seed: message };
+    const generated = await generateXPost(input);
+    if (!body.publish) return sendJson(res, { ok: true, target, mode, dryRun: true, generated });
+    if (!xAutomationLive()) return sendJson(res, { error: "X AI is not live. Run `npm run vlad -- on x` first." }, 409);
+    const posted = await xApi("POST", "https://api.x.com/2/tweets", { text: generated.mainTweet });
+    recordXPost({ id: posted?.data?.id, text: generated.mainTweet, type: "operator", postedAt: new Date().toISOString() });
+    return sendJson(res, { ok: true, target, mode, dryRun: false, tweet: posted?.data || null, generated });
+  } catch (error) {
+    return sendJson(res, { ok: false, error: error.message }, 400);
+  }
+}
 function serve(req, res) {
   const pathOnly = String(req.url || "/").split("?")[0];
   const requestPath = pathOnly === "/" ? "/index.html" : pathOnly;
@@ -3200,6 +3318,8 @@ function serve(req, res) {
 }
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+  if (url.pathname === "/api/_internal/reset" && req.method === "POST") return handleControlReset(req, res);
+  if (url.pathname === "/api/_internal/inject" && req.method === "POST") return handleControlInject(req, res);
   if (url.pathname === "/api/shills" && req.method === "GET") {
     const items = canonicalShills();
     return sendJson(res, { items, count: items.length });
@@ -3208,13 +3328,13 @@ const server = http.createServer((req, res) => {
   if (url.pathname === "/api/x/status" && req.method === "GET") return handleXStatus(req, res);
   if (url.pathname === "/api/x/mind" && req.method === "GET") return handleXMind(req, res);
   if (url.pathname === "/api/x/research" && req.method === "GET") return handleXResearch(req, res);
-  if (url.pathname === "/api/x/research/action" && req.method === "POST") return handleXResearchAction(req, res);
+  if (url.pathname === "/api/x/research/action" && req.method === "POST") return controlRequestAuthorized(req) ? handleXResearchAction(req, res) : sendJson(res, { error: "not found" }, 404);
   if (url.pathname === "/api/x/feed" && req.method === "GET") return handleXFeed(req, res);
   if (url.pathname === "/api/x/verify" && req.method === "GET") return handleXVerify(req, res);
   if (url.pathname === "/api/x/memes" && req.method === "GET") return handleXMemeStatus(req, res);
   if (url.pathname === "/api/x/mentions" && req.method === "GET") return handleXMentions(req, res, url);
-  if (url.pathname === "/api/x/mentions/test" && req.method === "POST") return handleXMentionTest(req, res);
-  if (url.pathname === "/api/x/tweet" && req.method === "POST") return handleXTweet(req, res);
+  if (url.pathname === "/api/x/mentions/test" && req.method === "POST") return controlRequestAuthorized(req) ? handleXMentionTest(req, res) : sendJson(res, { error: "not found" }, 404);
+  if (url.pathname === "/api/x/tweet" && req.method === "POST") return controlRequestAuthorized(req) ? handleXTweet(req, res) : sendJson(res, { error: "not found" }, 404);
   if ((url.pathname === "/api/x/pnl-card.svg" || url.pathname === "/api/x/pnl-card.png") && req.method === "GET") return handleXCard(req, res, url);
   if (url.pathname === "/api/wallet/summary") return sendJson(res, { ...summary, paused: BACKEND_PAUSED });
   if (url.pathname === "/api/wallet/activity") return sendJson(res, { ...activity, paused: BACKEND_PAUSED });

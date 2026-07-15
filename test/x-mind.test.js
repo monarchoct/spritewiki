@@ -133,3 +133,13 @@ test("an authoritative remote snapshot can replace newer local defaults", () => 
   assert.equal(setup.instance.importState(remote, { force: true }), true);
   assert.deepEqual(setup.instance.state.currentPriorities, ["restored remote priority"]);
 });
+
+test("reset removes learned state and restores only configured defaults", () => {
+  const setup = mind({ config: { backgroundThoughts: [{ topic: "culture:home", belief: "Robinhood Chain is home" }] } });
+  setup.instance.ingestObservation({ sourceType: "MARKET", sourceId: "old", topic: "position:OLD", summary: "old wallet memory", significance: 1, novelty: 1 });
+  setup.instance.registerExpression({ topic: "position:old", text: "old expression", postId: "old-post" });
+  const reset = setup.instance.reset();
+  assert.equal(reset.observations.length, 0);
+  assert.equal(reset.expressionHistory.length, 0);
+  assert.deepEqual(reset.activeThoughts.map((thought) => thought.topic), ["culture:home"]);
+});

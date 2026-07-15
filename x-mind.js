@@ -164,6 +164,13 @@ class XMind {
     return true;
   }
 
+  reset() {
+    this.state = defaultState(this.config, this.now());
+    this.ensureBackgroundThoughts(false);
+    this.save();
+    return this.exportState();
+  }
+
   ensureBackgroundThoughts(save = true) {
     let changed = false;
     for (const seed of this.config.backgroundThoughts || []) {
